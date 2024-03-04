@@ -3,7 +3,7 @@ const path = require('path')
 const Router = require('koa-router')
 const fileRouter = new Router()
 const authController = require('../controllers/authController')
-const { logger } = require('../utils/logger')
+// const { logger } = require('../utils/logger')
 const { getErrorMessage, statusCodes } = require('../utils/statusCodes')
 
 const projectRoot = process.cwd()
@@ -57,7 +57,7 @@ fileRouter.post('/upload', authController.hasToken, async (ctx) => {
   } catch (error) {
     ctx.status = statusCodes.InternalServerError
     ctx.body = error.message
-    logger.error(error.message)
+    console.error(error.message)
   }
 })
 

@@ -9,6 +9,7 @@ const userRoutes = require('./routes/userRoutes')
 const roleRoutes = require('./routes/roleRoutes')
 const permissionRoutes = require('./routes/permissionRoutes')
 const dictionaryRoutes = require('./routes/dictionaryRoutes')
+const fileRoutes = require('./routes/fileRoutes')
 
 const app = new Koa()
 
@@ -37,6 +38,7 @@ app.use(userRoutes.routes())
 app.use(roleRoutes.routes())
 app.use(permissionRoutes.routes())
 app.use(dictionaryRoutes.routes())
+app.use(fileRoutes.routes())
 
 // Start the server
 const PORT = process.env.PORT || 4000
