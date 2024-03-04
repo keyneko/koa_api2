@@ -9,6 +9,7 @@
     "start:prod": "cross-env NODE_ENV=production node api/index.js"
   },
   "dependencies": {
+    "@koa/cors": "^5.0.0",
     "aedes": "^0.50.1",
     "bcrypt": "^5.1.1",
     "jsonwebtoken": "^9.0.2",

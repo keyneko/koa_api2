@@ -1,6 +1,7 @@
 const Koa = require('koa')
 const path = require('path')
 const http = require('http')
+const cors = require('@koa/cors')
 const { koaBody } = require('koa-body')
 const koaStatic = require('koa-static')
 const sequelize = require('./utils/sequelize')
@@ -13,6 +14,8 @@ const fileRoutes = require('./routes/fileRoutes')
 // const logRoutes = require('./routes/logRoutes')
 
 const app = new Koa()
+
+app.use(cors())
 
 // Configuring static file service
 app.use(koaStatic(path.join(process.cwd(), '/public')))
