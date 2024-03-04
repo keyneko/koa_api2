@@ -1,0 +1,48 @@
+{
+  "name": "app",
+  "author": "keyneko",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "cross-env NODE_ENV=development node api/index.js",
+    "start:prod": "cross-env NODE_ENV=production node api/index.js"
+  },
+  "dependencies": {
+    "aedes": "^0.50.1",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "koa": "^2.14.2",
+    "koa-body": "^6.0.1",
+    "koa-bodyparser": "^4.4.1",
+    "koa-compress": "^5.1.1",
+    "koa-router": "^12.0.1",
+    "koa-static": "^5.0.0",
+    "lodash": "^4.17.21",
+    "modbus-serial": "^8.0.16",
+    "moment": "^2.29.4",
+    "mongoose": "^7.6.5",
+    "mqtt": "^5.3.3",
+    "mysql2": "^3.9.2",
+    "node-opcua": "^2.119.2",
+    "node-opcua-samples": "^2.119.2",
+    "node-rsa": "^1.1.1",
+    "sequelize": "^6.37.1",
+    "socket.io": "^4.7.2",
+    "svg-captcha": "^1.4.0",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1",
+    "zlib": "^1.0.5"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.3.1",
+    "prettier": "^3.1.0"
+  },
+  "engines": {
+    "node": "^18.19.0",
+    "npm": "^10.2.3"
+  },
+  "license": "ISC"
+}
