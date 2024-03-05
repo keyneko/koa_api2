@@ -302,13 +302,7 @@ async function deleteUser(ctx) {
 
     await user.setRoles([])
     await user.setDenyPermissions([])
-
-    const result = await user.destroy()
-    if (!result) {
-      ctx.status = statusCodes.NotFound
-      ctx.body = getErrorMessage(statusCodes.NotFound, language, 'userNotFound')
-      return
-    }
+    await user.destroy()
 
     ctx.status = 200
     ctx.body = {

@@ -1,52 +1,49 @@
-const mongoose = require('mongoose')
+const { DataTypes } = require('sequelize')
+const sequelize = require('../utils/sequelize')
 
-// Define the schema for the 'positions' collection
-const positionSchema = new mongoose.Schema({
+// Define the model for the 'positions' table
+const Position = sequelize.define('Position', {
   // Unique position code with specified format
   value: {
-    type: String,
+    type: DataTypes.STRING,
     unique: true,
-    required: true,
+    allowNull: false,
   },
   // Name of the position
   name: {
-    type: String,
+    type: DataTypes.STRING,
   },
   // Flag indicating whether multiple items can be stacked in the same position: 0 (not allowed), 1 (allowed)
   isStackable: {
-    type: Number,
-    enum: [0, 1],
-    default: 0,
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
   // Status: 0 (invalid), 1 (valid)
   status: {
-    type: Number,
-    enum: [0, 1],
-    default: 1,
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1,
   },
   isProtected: {
-    type: Boolean,
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
   options: {
-    type: Object,
-    default: {},
+    type: DataTypes.JSON,
+    defaultValue: {},
   },
   files: {
-    type: [String],
-    default: [],
+    type: DataTypes.JSON,
+    defaultValue: [],
   },
   translations: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {},
+    type: DataTypes.JSON,
+    defaultValue: {},
   },
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: DataTypes.INTEGER,
   },
 })
-
-// Create the 'Position' model using the defined schema
-const Position = mongoose.model('Position', positionSchema)
 
 // Export the 'Position' model for use in other modules
 module.exports = Position

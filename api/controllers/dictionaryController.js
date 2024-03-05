@@ -82,7 +82,7 @@ async function createDictionary(ctx) {
 
     ctx.body = {
       code: 200,
-      data: dictionary._id,
+      data: dictionary.id,
     }
   } catch (error) {
     ctx.status = statusCodes.InternalServerError

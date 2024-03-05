@@ -1,5 +1,3 @@
-// models/user.js
-
 const { DataTypes } = require('sequelize')
 const sequelize = require('../utils/sequelize')
 const Role = require('./role')

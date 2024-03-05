@@ -2,12 +2,20 @@ const Router = require('koa-router')
 const sensorRouter = new Router()
 const authController = require('../controllers/authController')
 const sensorController = require('../controllers/sensorController')
+const sensorRecordController = require('../controllers/sensorRecordController')
 
 // Get all sensors
 sensorRouter.get(
   '/sensors',
   authController.hasToken,
   sensorController.getSensors,
+)
+
+// Get sensor
+sensorRouter.get(
+  '/sensor',
+  authController.hasToken,
+  sensorController.getSensor,
 )
 
 // Create a sensor
@@ -35,21 +43,21 @@ sensorRouter.delete(
 sensorRouter.post(
   '/sensor/publish',
   authController.hasToken,
-  sensorController.publishMessage,
+  sensorRecordController.publishMessage,
 )
 
 // Get all records
 sensorRouter.get(
   '/sensor/records',
   authController.hasToken,
-  sensorController.getRecords,
+  sensorRecordController.getRecords,
 )
 
 // Create a record
 sensorRouter.post(
   '/sensor/record',
   authController.hasApiKey,
-  sensorController.createRecord,
+  sensorRecordController.createRecord,
 )
 
 module.exports = sensorRouter

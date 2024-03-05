@@ -117,10 +117,7 @@ async function deletePermission(ctx) {
     }
 
     // If not protected, delete the permission
-    const result = await permission.destroy()
-    if (!result) {
-      return
-    }
+    await permission.destroy()
 
     ctx.body = {
       code: 200,

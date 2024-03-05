@@ -152,13 +152,7 @@ async function deleteRole(ctx) {
     }
 
     await role.setPermissions([])
-
-    const result = await role.destroy()
-    if (!result) {
-      ctx.status = statusCodes.NotFound
-      ctx.body = getErrorMessage(statusCodes.NotFound, language, 'roleNotFound')
-      return
-    }
+    await role.destroy()
 
     ctx.body = {
       code: 200,

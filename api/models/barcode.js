@@ -1,50 +1,53 @@
-const mongoose = require('mongoose')
+const { DataTypes } = require('sequelize')
+const sequelize = require('../utils/sequelize')
 
-const barcodeSchema = new mongoose.Schema({
-  value: {
-    type: String,
-    required: true,
-    unique: true,
+const Barcode = sequelize.define(
+  'Barcode',
+  {
+    value: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+    },
+    quantity: {
+      type: DataTypes.INTEGER,
+      defaultValue: 1,
+    },
+    basicUnit: {
+      type: DataTypes.STRING,
+      defaultValue: 'pcs',
+    },
+    options: {
+      type: DataTypes.JSON,
+      defaultValue: {},
+    },
+    position: {
+      type: DataTypes.STRING,
+    },
+    status: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    isProtected: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    files: {
+      type: DataTypes.JSON,
+      defaultValue: [],
+    },
+    translations: {
+      type: DataTypes.JSON,
+      defaultValue: {},
+    },
+    createdBy: {
+      type: DataTypes.INTEGER,
+    },
   },
-  name: {
-    type: String,
-  },
-  quantity: {
-    type: Number,
-    default: 1,
-  },
-  basicUnit: {
-    type: String,
-    default: 'pcs',
-  },
-  options: {
-    type: Object,
-    default: {},
-  },
-  position: {
-    type: String,
-  },
-  status: {
-    type: Number,
-    default: 0,
-  },
-  isProtected: {
-    type: Boolean,
-  },
-  files: {
-    type: [String],
-    default: [],
-  },
-  translations: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {},
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-})
-
-const Barcode = mongoose.model('Barcode', barcodeSchema)
+  {},
+)
 
 module.exports = Barcode

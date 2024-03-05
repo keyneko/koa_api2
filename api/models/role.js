@@ -1,5 +1,3 @@
-// models/role.js
-
 const { DataTypes } = require('sequelize')
 const sequelize = require('../utils/sequelize')
 const Permission = require('./permission')
@@ -27,7 +25,7 @@ const Role = sequelize.define(
       },
     },
     sops: {
-      type: DataTypes.ARRAY(DataTypes.STRING),
+      type: DataTypes.JSON,
       defaultValue: [],
     },
     translations: {

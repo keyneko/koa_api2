@@ -1,54 +1,54 @@
-const mongoose = require('mongoose')
+const { DataTypes } = require('sequelize')
+const sequelize = require('../utils/sequelize')
 
-const sensorSchema = new mongoose.Schema({
+// Define the model for the 'sensors' table
+const Sensor = sequelize.define('Sensor', {
   name: {
-    type: String,
+    type: DataTypes.STRING,
   },
   number: {
-    type: String,
+    type: DataTypes.STRING,
   },
   type: {
-    type: Number,
+    type: DataTypes.INTEGER,
   },
   manufacturer: {
-    type: String,
+    type: DataTypes.STRING,
   },
   apiKey: {
-    type: String,
+    type: DataTypes.STRING,
     unique: true,
   },
   // Status: 0 (invalid), 1 (valid)
   status: {
-    type: Number,
-    enum: [0, 1],
-    default: 1,
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1,
   },
   isOnline: {
-    type: Boolean,
-    default: false,
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
   isProtected: {
-    type: Boolean,
-    default: false,
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
   isPublic: {
-    type: Boolean,
-    default: false,
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
   subscriptions: {
-    type: mongoose.Schema.Types.Mixed,
-    default: [],
+    type: DataTypes.JSON,
+    defaultValue: [],
   },
   translations: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {},
+    type: DataTypes.JSON,
+    defaultValue: {},
   },
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: DataTypes.INTEGER,
   },
 })
 
-const Sensor = mongoose.model('Sensor', sensorSchema)
-
+// Export the 'Sensor' model for use in other modules
 module.exports = Sensor

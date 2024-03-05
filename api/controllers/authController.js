@@ -4,6 +4,7 @@ const svgCaptcha = require('svg-captcha')
 const User = require('../models/user')
 const Role = require('../models/role')
 const RevokedToken = require('../models/revokedToken')
+const Sensor = require('../models/sensor')
 const { decryptPassword } = require('../utils/rsa')
 const { getErrorMessage, statusCodes } = require('../utils/statusCodes')
 
@@ -270,6 +271,50 @@ async function logout(ctx) {
   }
 }
 
+const hasApiKey = async (ctx, next) => {
+  const { apikey, authorization: token } = ctx.headers
+  const { sensorId } = ctx.request.body
+  const language = ctx.cookies.get('language')
+
+  if (!token) {
+    // Token is not present, check for API key
+    if (apikey) {
+      const sensor = await Sensor.findByPk(sensorId)
+
+      if (!sensor) {
+        ctx.status = statusCodes.Forbidden
+        ctx.body = getErrorMessage(
+          statusCodes.Forbidden,
+          language,
+          'protectedSensor',
+        )
+        return
+      }
+
+      if (sensor.apiKey !== apikey) {
+        ctx.status = statusCodes.Unauthorized
+        ctx.body = getErrorMessage(
+          statusCodes.Unauthorized,
+          language,
+          'invalidApiKey',
+        )
+        return
+      }
+
+      await next()
+    } else {
+      ctx.status = statusCodes.Unauthorized
+      ctx.body = getErrorMessage(
+        statusCodes.Unauthorized,
+        language,
+        'missingApiKey',
+      )
+    }
+  } else {
+    await next()
+  }
+}
+
 module.exports = {
   captcha,
   register,
@@ -279,4 +324,5 @@ module.exports = {
   verifyToken,
   hasToken,
   isAdmin,
+  hasApiKey,
 }

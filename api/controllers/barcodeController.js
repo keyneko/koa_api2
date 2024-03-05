@@ -1,58 +1,57 @@
+const sequelize = require('../utils/sequelize')
 const Barcode = require('../models/barcode')
-const { logger } = require('../utils/logger')
+// const { logger } = require('../utils/logger')
 const { getErrorMessage, statusCodes } = require('../utils/statusCodes')
 
 // Generate barcode
 async function generateBarcode(categoryCode) {
-  const category = categoryCode.toUpperCase()
+  try {
+    const category = categoryCode.toUpperCase()
 
-  // Validate the category code
-  if (!/^[A-Z]{2}$/.test(category)) {
-    throw new Error('Invalid category code')
-  }
+    // Validate the category code
+    if (!/^[A-Z]{2}$/.test(category)) {
+      throw new Error('Invalid category code')
+    }
 
-  // Get the current date in YYYYMMDD format
-  const currentDate = new Date()
-  const dateCode = `${currentDate.getFullYear()}${(currentDate.getMonth() + 1)
-    .toString()
-    .padStart(2, '0')}${currentDate.getDate().toString().padStart(2, '0')}`
+    // Get the current date in YYYYMMDD format
+    const currentDate = new Date()
+    const dateCode = `${currentDate.getFullYear()}${(currentDate.getMonth() + 1)
+      .toString()
+      .padStart(2, '0')}${currentDate.getDate().toString().padStart(2, '0')}`
 
-  // console.log('Generated Category:', category)
-  // console.log('Generated Date Code:', dateCode)
-
-  // Use the aggregation pipeline to find the last generated barcode for the specified category and date code
-  const lastBarcode = await Barcode.aggregate([
-    {
-      $match: {
-        value: {
-          $regex: `^${category}${dateCode}`, // Match the start of the value field
+    // Use Sequelize to find the last generated barcode for the specified category and date code
+    const lastBarcode = await sequelize.query(
+      `
+    SELECT * FROM Barcodes
+    WHERE value LIKE :prefix
+    ORDER BY value DESC
+    LIMIT 1
+  `,
+      {
+        replacements: {
+          prefix: `${category}${dateCode}%`,
         },
+        type: sequelize.QueryTypes.SELECT,
       },
-    },
-    {
-      $sort: {
-        value: -1, // Sort in descending order based on value
-      },
-    },
-    {
-      $limit: 1,
-    },
-  ])
+    )
 
-  // console.log('Aggregation Result:', lastBarcode)
+    // Calculate the next incremental number
+    const nextIncrementalNumber =
+      (lastBarcode.length > 0
+        ? parseInt(lastBarcode[0].value.slice(-4), 10)
+        : 0) + 1
 
-  // Calculate the next incremental number
-  const nextIncrementalNumber =
-    (lastBarcode.length > 0
-      ? parseInt(lastBarcode[0].value.slice(-4), 10)
-      : 0) + 1
+    // Combine components to form the complete barcode value
+    const barcodeValue = `${category}${dateCode}${nextIncrementalNumber
+      .toString()
+      .padStart(4, '0')}`
 
-  // Combine components to form the complete barcode value
-  const barcodeValue = `${category}${dateCode}${nextIncrementalNumber
-    .toString()
-    .padStart(4, '0')}`
-
-  return barcodeValue
+    return barcodeValue
+  } catch (error) {
+    // Handle any errors that may occur during the database query
+    console.error(error.message)
+    throw new Error('Error generating bardoe code')
+  }
 }
 
 async function getBarcodes(ctx) {
@@ -60,7 +59,7 @@ async function getBarcodes(ctx) {
     const { pageNum = 1, pageSize = 10, status } = ctx.query
     const language = ctx.cookies.get('language')
     const decoded = ctx.state.decoded
-    const createdBy = decoded.userId
+    const userId = decoded.userId
     const isAdmin = (decoded.roles || []).some((role) => role.isAdmin)
 
     const filter = {}
@@ -68,36 +67,40 @@ async function getBarcodes(ctx) {
       filter.status = status
     }
     if (!isAdmin) {
-      filter.createdBy = createdBy
+      filter.createdBy = userId
     }
 
-    const skip = (pageNum - 1) * pageSize
+    const offset = (pageNum - 1) * pageSize
     const limit = parseInt(pageSize)
 
-    const [barcodes, total] = await Promise.all([
-      Barcode.find(filter)
-        .select([
-          'value',
-          'name',
-          'quantity',
-          'basicUnit',
-          'status',
-          'isProtected',
-          'files',
-          'translations',
-        ])
-        .sort({ _id: -1 })
-        .skip(skip)
-        .limit(limit),
-      Barcode.countDocuments(filter),
-    ])
+    const barcodes = await Barcode.findAll({
+      where: filter,
+      attributes: [
+        'id',
+        'value',
+        'name',
+        'quantity',
+        'basicUnit',
+        'status',
+        'isProtected',
+        'files',
+        // 'translations',
+      ],
+      order: [['createdAt', 'DESC']],
+      offset: offset,
+      limit: limit,
+    })
+
+    const total = await Barcode.count({
+      where: filter,
+    })
 
     // Map over the barcodes to retrieve translated values
     const mappedBarcodes = barcodes.map((barcode) => ({
-      ...barcode.toObject(),
-      name: barcode.translations?.name?.[language] || barcode.name,
-      basicUnit:
-        barcode.translations?.basicUnit?.[language] || barcode.basicUnit,
+      ...barcode.get({ plain: true }),
+      // name: barcode.translations?.name?.[language] || barcode.name,
+      // basicUnit:
+      //   barcode.translations?.basicUnit?.[language] || barcode.basicUnit,
     }))
 
     ctx.status = 200
@@ -109,7 +112,7 @@ async function getBarcodes(ctx) {
   } catch (error) {
     ctx.status = statusCodes.InternalServerError
     ctx.body = error.message
-    logger.error(error.message)
+    console.error(error.message)
   }
 }
 
@@ -118,16 +121,20 @@ async function getBarcode(ctx) {
     const { value } = ctx.query
     const language = ctx.cookies.get('language')
 
-    const barcode = await Barcode.findOne({ value }).select([
-      'value',
-      'name',
-      'quantity',
-      'basicUnit',
-      'status',
-      'isProtected',
-      'files',
-      'translations',
-    ])
+    const barcode = await Barcode.findOne({
+      where: { value },
+      attributes: [
+        'id',
+        'value',
+        'name',
+        'quantity',
+        'basicUnit',
+        'status',
+        'isProtected',
+        'files',
+        //'translations',
+      ],
+    })
 
     if (!barcode) {
       ctx.status = statusCodes.NotFound
@@ -142,16 +149,16 @@ async function getBarcode(ctx) {
     ctx.body = {
       code: 200,
       data: {
-        ...barcode.toObject(),
-        name: barcode.translations?.name?.[language] || barcode.name,
-        basicUnit:
-          barcode.translations?.basicUnit?.[language] || barcode.basicUnit,
+        ...barcode.get({ plain: true }),
+        // name: barcode.translations?.name?.[language] || barcode.name,
+        // basicUnit:
+        //   barcode.translations?.basicUnit?.[language] || barcode.basicUnit,
       },
     }
   } catch (error) {
     ctx.status = statusCodes.InternalServerError
     ctx.body = error.message
-    logger.error(error.message)
+    console.error(error.message)
   }
 }
 
@@ -167,52 +174,38 @@ async function createBarcode(ctx) {
     } = ctx.request.body
     const language = ctx.cookies.get('language')
     const decoded = ctx.state.decoded
-
     const value = await generateBarcode(category)
-    const newBarcode = new Barcode({
+
+    const newBarcode = await Barcode.create({
       name,
-      basicUnit,
       value,
+      basicUnit,
       quantity,
       status,
       files,
       createdBy: decoded.userId,
     })
 
-    // Handle translations based on the language value
-    if (language === 'zh' || language === undefined) {
-    } else {
-      // Use $set to add translations
-      newBarcode.$set('translations', {
-        name: {
-          [language]: name,
-        },
-        basicUnit: {
-          [language]: basicUnit,
-        },
-      })
-    }
-
-    await newBarcode.save()
-
     ctx.body = {
       code: 200,
-      data: value,
+      data: {
+        id: newBarcode.id,
+        value,
+      },
     }
   } catch (error) {
     ctx.status = statusCodes.InternalServerError
     ctx.body = error.message
-    logger.error(error.message)
+    console.error(error.message)
   }
 }
 
 async function updateBarcode(ctx) {
   try {
-    const { value, isProtected } = ctx.request.body
-    const updateData = { ...ctx.request.body }
+    const { name, value, basicUnit, quantity, status, isProtected, files } =
+      ctx.request.body
     const language = ctx.cookies.get('language')
-
-    const barcode = await Barcode.findOne({ value })
+    const barcode = await Barcode.findOne({ where: { value } })
 
     if (!barcode) {
       ctx.status = statusCodes.NotFound
@@ -224,36 +217,15 @@ async function updateBarcode(ctx) {
       return
     }
 
-    // Update default fields for 'zh' or undefined language
-    if (language === 'zh' || language === undefined) {
-      barcode.name = updateData.name || barcode.name
-      barcode.basicUnit = updateData.basicUnit || barcode.basicUnit
-    } else {
-      // Update translations based on the specified language
-      if ('name' in updateData) {
-        barcode.translations.name = {
-          ...(barcode.translations.name || {}),
-          [language]: updateData.name,
-        }
-      }
+    const updateFields = {}
+    if (name !== undefined) updateFields.name = name
+    if (basicUnit !== undefined) updateFields.basicUnit = basicUnit
+    if (quantity !== undefined) updateFields.quantity = quantity
+    if (status !== undefined) updateFields.status = status
+    if (isProtected !== undefined) updateFields.isProtected = isProtected
+    if (files !== undefined) updateFields.files = files
 
-      if ('basicUnit' in updateData) {
-        barcode.translations.basicUnit = {
-          ...(barcode.translations.basicUnit || {}),
-          [language]: updateData.basicUnit,
-        }
-      }
-
-      // Mark the modified fields to ensure they are saved
-      barcode.markModified('translations')
-    }
-
-    barcode.quantity = updateData.quantity || barcode.quantity
-    barcode.status = updateData.status || barcode.status
-    barcode.files = updateData.files || barcode.files
-    if (isProtected !== undefined) barcode.isProtected = isProtected
-
-    await barcode.save()
+    await barcode.update(updateFields)
 
     ctx.body = {
       code: 200,
@@ -261,7 +233,7 @@ async function updateBarcode(ctx) {
   } catch (error) {
     ctx.status = statusCodes.InternalServerError
     ctx.body = error.message
-    logger.error(error.message)
+    console.error(error.message)
   }
 }
 
@@ -269,8 +241,8 @@ async function deleteBarcode(ctx) {
   try {
     const { value } = ctx.query
     const language = ctx.cookies.get('language')
+    const barcode = await Barcode.findOne({ where: { value } })
 
-    const barcode = await Barcode.findOne({ value })
     if (!barcode) {
       ctx.status = statusCodes.NotFound
       ctx.body = getErrorMessage(
@@ -292,7 +264,7 @@ async function deleteBarcode(ctx) {
       return
     }
 
-    await Barcode.findOneAndDelete({ value })
+    await barcode.destroy()
 
     ctx.body = {
       code: 200,
@@ -300,7 +272,7 @@ async function deleteBarcode(ctx) {
   } catch (error) {
     ctx.status = statusCodes.InternalServerError
     ctx.body = error.message
-    logger.error(error.message)
+    console.error(error.message)
   }
 }
 
