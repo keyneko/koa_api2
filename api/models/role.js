@@ -1,3 +1,4 @@
+// role.js
 const { DataTypes } = require('sequelize')
 const sequelize = require('../utils/sequelize')
 const Permission = require('./permission')
